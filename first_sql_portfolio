@@ -1,0 +1,340 @@
+	/*In preparation for success planning, the AVP of Lending is reviewing the lending portfolio for Stillwater Community Bank and is interested to see the Mortgage and Auto Loans approved over $20K. I would like to review the top 10 loans with the highest loan amount and should include the following: ID of the loan, amount of the loan, type of loan, and status of the loan.*/
+
+SELECT 
+LOAN_ID,
+LOAN_AMOUNT,
+LOAN_TYPE,
+LOAN_STATUS
+FROM LENDING
+WHERE LOAN_AMOUNT >20000 AND LOAN_TYPE IN ('Mortgage','Auto') AND LOAN_STATUS = 'Approved'
+ORDER BY LOAN_AMOUNT DESC
+LIMIT 10
+
+  /*The AVP of Lending would like to now see Personal Loans approved between $10K to $20K, for the top 10 loans with the highest loan amount and should include the following: ID of the loan, amount of the loan, type of loan, and status of the loan. */
+SELECT 
+LOAN_ID,
+LOAN_AMOUNT,
+LOAN_TYPE,
+LOAN_STATUS
+FROM LENDING
+WHERE LOAN_AMOUNT BETWEEN 10000 AND 20000 AND LOAN_TYPE NOT IN ('MORTGAGE','AUTO') AND LOAN_STATUS = 'APPROVED'
+ORDER BY LOAN_AMOUNT DESC
+LIMIT 10
+
+5)	/*I would like to review all rejected loans that are less than $15K in hopes to reapprove the loan. I will need to distribute the list of mortgage applications to the Mortgage Origination Manager, the list of auto applications to the Consumer Lending Manager, and the list of personal loan applications to the Regional Director of Sales. Please include in each list the following: ID of the loan, amount of the loan, type of loan, rejection date, and status of the loan. Limit each list to 10.*/
+
+/*For the mortgage list, I would also like to see the largest loan amount first.*/
+select Loan_id, 
+Loan_amount, 
+Loan_type, 
+approval_rejection_date, 
+loan_status 
+from lending 
+where loan_amount < 15000 and loan_status = 'Rejected'  and loan_type = 'Mortgage' 
+order by loan_amount desc 
+limit 10 
+
+/*For the auto list, I would also like to see the loan term from minimum to maximum term first.*/
+SELECT
+LOAN_ID,
+LOAN_AMOUNT,
+LOAN_TYPE,
+LOAN_TERM
+APPROVAL_REJECTION_DATE,
+LOAN_STATUS
+FROM LENDING
+WHERE LOAN_AMOUNT <= 15000 AND LOAN_STATUS ='Rejected' AND LOAN_TYPE = 'Auto'
+ORDER BY LOAN_TERM ASC
+LIMIT 10
+
+/*For the personal list, I would also like to see the branch ID from smallest to largest first and loan term should be between 24 and 30 months.*/
+SELECT
+BRANCH_ID,
+LOAN_ID,
+LOAN_AMOUNT,
+LOAN_TYPE,
+LOAN_TERM
+APPROVAL_REJECTION_DATE,
+LOAN_STATUS
+FROM LENDING
+WHERE LOAN_TYPE = 'Personal' AND LOAN_TERM BETWEEN 24 AND 30
+ORDER BY BRANCH_ID ASC
+LIMIT 10
+
+7)	/*Since we are reviewing credit cards, can I see a report that only shows master cards and visas with balances greater than $4k? Do Not include AMEX however I would like to see the smallest balance first and only provide 10 cards*/
+select cardid, 
+card_type, 
+credit_card_balance 
+from credit 
+where credit_card_balance > 4000 and card_type in ('MasterCard','Visa') 
+Order by credit_card_balance asc 
+Limit 10 
+OR 
+select cardid, 
+card_type, 
+credit_card_balance 
+from credit 
+where credit_card_balance > 4000 and card_type != 'AMEX ' 
+Order by credit_card_balance asc 
+Limit 10 
+
+  /*I do apologize, I would also like to see a report with only AMEX where the balance is $3K and greater, where the largest balance is first. Please only provide 10 cards.*/
+select cardid, 
+card_type, 
+credit_card_balance 
+from credit 
+where card_type = 'AMEX' and credit_card_balance >= 3000 
+order by 3 desc 
+limit 10 
+
+
+/*Just received an email request from the Regional Director of Operations and Regional Director of Sales. They would like to see a list of all customers along with any information however they prefer the list to include only single customers who have completed the basic 9 years of education. We would also like to see the list where the job title is in order from A to Z and only provide 10 customers*/
+select * 
+from sub_demographics 
+where marital = 'single' and education = 'basic.9y' 
+order by job asc 
+limit 10 
+
+/*One more request, we would like to see another list of all customers along with any information but please include customers that are married, who have completed the basic 4 and 6 years of education and their job title is not an administrator or blue collar.  We would still like to see the list where the job title is in order from A to Z and only provide 10 customers.*/
+select * 
+from sub_demographics 
+where marital = 'married' and education in ('basic.4y','basic.6y') and job not in ('admin.','blue-collar') 
+order by job asc 
+limit 10 
+
+
+/*This will be our final request. Can you provide the same list however only include customers where their job title and education is not known? We would like to see the customers from smallest to largest and only provide a sample of 10 customers.*/
+select * 
+from sub_demographics 
+where education = 'unknown' and job = 'unknown' 
+order by id  
+limit 10 
+
+ /*DATES*/ 
+/*The Manager’s Meetings just concluded, and the Regional Director of Sales would like to get a list of all customers and when their account(s) were opened. They prefer to see the list where the month, the day, and the year the account was opened listed separately for each customer. However, they would still like to see the original account opening date.*/
+select contact_number,
+date_of_account_opening,
+monthname(date_of_account_opening) as Opening_Month,
+dayname(date_of_account_opening) as Opening_DOW,
+year(date_of_account_opening) as Opening_Year
+from account
+
+7)	Course 8: I hope you have not completed the report yet. The AVP of Lending also needs this report to show the loans that were approved in the year 2021 for the 2nd quarter. There are no additional changes to how they would like to see the list. Thank you. 
+select loan_id,
+loan_amount,
+loan_type,
+loan_status,
+approval_rejection_date,
+quarter(approval_rejection_date) as Approval_Quarter,
+year(approval_rejection_date) as Approval_Year
+from lending
+where loan_status = 'Approved' and quarter(approval_rejection_date) = 2 and
+year(approval_rejection_date) = 2021
+
+8)	Course 8: The AVP of Lending needs to determine the number of days past due for each credit cardholder based on their last payment date compared to their due date (Note: Negative days reflect that the payment was made on time). Include the following:
+●	Card Number
+●	Card Type
+●	Payment Due Date
+●	Last Payment Date
+●	Past due days
+SELECT CARDID,
+CARD_TYPE,
+PAYMENT_DUE_DATE,
+LAST_CREDIT_CARD_PAYMENT_DATE,
+DATEDIFF(DAY,PAYMENT_DUE_DATE,LAST_CREDIT_CARD_PAYMENT_DATE) AS DAYS_PAST_DUE
+FROM CREDIT
+
+9)	Course 8: It’s me again. They would like to see the list for VISA and Master Card holders only. Everything else is still the same.
+SELECT CARDID,
+CARD_TYPE,
+PAYMENT_DUE_DATE,
+LAST_CREDIT_CARD_PAYMENT_DATE,
+DATEDIFF(DAY,PAYMENT_DUE_DATE,LAST_CREDIT_CARD_PAYMENT_DATE) AS DAYS_PAST_DUE
+FROM CREDIT
+WHERE CARD_TYPE IN ('Visa', 'MasterCard')
+
+10)	Course 8: There seems to be a slight confusion. The list they need should only show credit cardholders that are past due more than 10 days. Please update the list to reflect this change. No additional changes to the list are needed currently. 
+select cardid,
+card_type,
+payment_due_date,
+last_credit_card_payment_date,
+datediff(day,payment_due_date,last_credit_card_payment_date) as Days_Past_Due
+from credit
+where card_type in ('MasterCard','Visa') and 
+datediff(day,payment_due_date,last_credit_card_payment_date) > 10
+
+OR
+
+select cardid,
+card_type,
+payment_due_date,
+last_credit_card_payment_date,
+datediff(day,last_credit_card_payment_date,payment_due_date) as Days_Past_Due
+from credit
+where card_type in ('MasterCard','Visa') and 
+datediff(day,last_credit_card_payment_date,payment_due_date) < -10
+
+/*We are getting ready to roll out a 1 yr 5.1% APY savings account promotion for our Checking customers who have been with us for at least 5 years. May you provide a list of these customers to Marketing by EOD so they can send mailers to these customers prior to the promotion kickoff that is scheduled for Monday?*/
+select contact_number,
+account_type,
+date_of_account_opening,
+getdate() as Today,
+datediff(year,date_of_account_opening,getdate()) as Years_Since_Customer
+from account
+where datediff(year,date_of_account_opening,getdate()) >=5 and
+account_type = 'Checking'
+order by datediff(year,date_of_account_opening,getdate()) asc
+
+/*How long ago did the transaction take place on the account for accounts that had deposit transactions?*/
+SELECT TRANSACTIONID,
+TRANSACTION_DATE,
+datediff(day,TRANSACTION_DATE,getdate()) as Days_Since_Transaction
+FROM TRANSACTION
+WHERE TRANSACTION_TYPE = 'Deposit'
+
+/*How long has each of our customers been with us in years?*/
+SELECT 
+CONTACT_NUMBER,
+DATE_OF_ACCOUNT_OPENING,
+DATEDIFF(YEAR,DATE_OF_ACCOUNT_OPENING,GETDATE()) AS YEARS_OPEN
+FROM ACCOUNT
+/*Which customers have been with us for at least 20 years?*/
+SELECT 
+CONTACT_NUMBER,
+DATE_OF_ACCOUNT_OPENING,
+DATEDIFF(YEAR,DATE_OF_ACCOUNT_OPENING,GETDATE()) AS YEARS_OPEN
+FROM ACCOUNT
+WHERE DATEDIFF(YEAR,DATE_OF_ACCOUNT_OPENING,GETDATE())>= 20
+
+  /*Our Customer Service team sends a 5 year, 10 year, 15 year, and 20 year gift to all customers on the anniversary of their account opening. May you provide them with a list of dates each customer has or will receive their anniversary gifts?*/
+  select contact_number,
+  date_of_account_opening,
+  dateadd(year,5,date_of_account_opening) as Five_Yr_Gift_Date,
+  dateadd(year,10,date_of_account_opening) as Ten_Yr_Gift_Date,
+  dateadd(year,15,date_of_account_opening) as Fifteen_Yr_Gift_Date,
+  dateadd(year,20,date_of_account_opening) as Twenty_Yr_Gift_Date
+  from account
+/*Actually, they would like to see which customers have already received all of their milestone anniversary gifts. Do you mind providing this list showing the customers who have most recently received their 15-year  gifts first? Thanks!*/
+SELECT CONTACT_NUMBER,
+DATE_OF_ACCOUNT_OPENING,
+DATEADD(YEAR, 5, DATE_OF_ACCOUNT_OPENING) AS FIVE_YR_ANN,
+DATEADD(YEAR, 10, DATE_OF_ACCOUNT_OPENING) AS TEN_YR_ANN,
+DATEADD(YEAR, 15, DATE_OF_ACCOUNT_OPENING) AS FIFTEEN_YR_ANN,
+DATEADD(YEAR, 20, DATE_OF_ACCOUNT_OPENING) AS TWENTY_YR_ANN
+FROM ACCOUNT
+WHERE DATEADD(YEAR, 15, DATE_OF_ACCOUNT_OPENING) <= GETDATE()
+ORDER BY FIFTEEN_YR_ANN DESC
+
+
+
+/*Our Data Processing team needs a list of when all transactions batched, along with the month, day, year, and how long ago they batched. We usually batch our transactions 3 days after the transaction date*/
+select *,
+dateadd(day,3,transaction_date) as Batch_Date,
+monthname(transaction_date) as Batch_Month,
+dayname(transaction_date) as Batch_Day,
+year(transaction_date) as Batch_Year,
+datediff(day,dateadd(day,3,transaction_date),getdate()) as Days_Since_Batched
+from transaction
+
+/*Lending wants to review denied loans again as they may be easing their lending standards. May you provide them with a list of rejected applications who have been rejected for at least 36 months? They will have the opportunity to approve these loans within 36 months of their rejection date as long as the loan approval expiration date hasn’t passed yet. Please provide them with this list, along with the approval expiration date.*/
+  select *,
+  datediff(month,approval_rejection_date,getdate()) as Months_Since_Rejection,
+  dateadd(month,36,approval_rejection_date) as Re_Approval_Date
+  from lending
+  where loan_status = 'Rejected' and
+  DATEDIFF(MONTH,APPROVAL_REJECTION_DATE,GETDATE()) >= 36
+  and   dateadd(month,36,approval_rejection_date) >= getdate()
+
+
+/*The Credit Card team is discussing plans to give our customers a 5-day grace period to pay their credit cards after the credit card due date as our current policy doesn’t provide them with a grace period. Can you provide them with a list of potential grace period dates and how many days past due customers were with the original due date and the grace period due date?*/
+SELECT CARDID,
+PAYMENT_DUE_DATE,
+DATEADD(DAY,5,PAYMENT_DUE_DATE) AS GRACE_PERIOD,
+LAST_CREDIT_CARD_PAYMENT_DATE,
+DATEDIFF(DAY,PAYMENT_DUE_DATE,LAST_CREDIT_CARD_PAYMENT_DATE) AS DAYS_PAST_DUE,
+DATEDIFF(DAY,DATEADD(DAY,5,PAYMENT_DUE_DATE),LAST_CREDIT_CARD_PAYMENT_DATE) AS DAYS_PAST_DUE_W_GRACE
+FROM CREDIT
+
+/*Aggreate Functions*/
+
+/*It looks like we forgot to mention we need a list of credit cards with reward points greater than 5000 where we can increase the points by 100 as a customer appreciation. This will not affect AMEX customers.*/
+select *,
+rewards_points + 100 as Appreciation_Points
+from credit
+where card_type != 'AMEX' and rewards_points > 5000
+
+/*Finance is conducting research for our upcoming Fed stress test. They are asking if you can provide them with the available credit for each of our customers, along with the credit card utilization rate.*/
+select cardid,
+credit_limit,
+credit_card_balance,
+credit_limit - credit_card_balance as Available_Credit,
+credit_card_balance/credit_limit as Utilization
+from credit
+
+/*Actually, can you provide them with customers whose utilization rate is no more than 35%?*/
+select cardid,
+card_type,
+credit_limit,
+credit_card_balance,
+credit_limit-credit_card_balance as Available_Credit,
+credit_card_balance/credit_limit as Utilization
+from credit
+where credit_card_balance/credit_limit <= 0.35
+/*Marketing is making a significant investment on gaining more customers by offering better rewards benefits. They want to see a list of customers that have at least $50 in reward points dollars? Each dollar is 10 points.*/
+select *,
+rewards_points/10 as Rewards_Dollars
+from credit
+where rewards_points/10 >= 50
+
+/*Credit is running a simulated model to see the updated credit card balances for all customers if they made their minimum payment against their current balance. May you provide them with this list of customers and their new balances if the minimum payment is made?*/
+select cardid,
+credit_card_balance,
+minimum_payment_due,
+credit_card_balance-minimum_payment_due as New_Balance
+from credit
+
+/*Lending wants to see a breakdown of how much annual and monthly interest is charged on non-personal outstanding loans that were issued at least 4 years ago for loans with at least a 48 month term.*/
+select *,
+datediff(year,approval_rejection_date,getdate()) as Years_Since_Issued,
+loan_amount*interest_rate as Total_Interest,
+(loan_amount*interest_rate)/loan_term as Monthly_Interest_Rate,
+((loan_amount*interest_rate)/loan_term) * 12 as Annual_Interest_Rate
+from lending
+where loan_type != 'Personal' and
+datediff(year,approval_rejection_date,getdate()) >= 4 and
+loan_term >= 48 and
+loan_status = 'Approved'
+
+/*For all customers who opened their savings account 20 years ago, we are depositing a .20 appreciation dividend to the customer’s balance. Please return which customers will be receiving their dividend, along with the date in which they will be receiving their dividend or have received their dividend.*/
+select contact_number,
+account_type,
+account_balance,
+account_balance + .20 as Balance_w_Dividend,
+date_of_account_opening,
+datediff(year,date_of_account_opening,getdate()) as Years_Opened,
+dateadd(year,20,date_of_account_opening) as Dividend_Issue_Date
+from account
+where account_type = 'Savings' and datediff(year,date_of_account_opening,getdate()) = 20
+
+
+/*For all customers who paid their credit card accounts late, return how many days late they were past the 5 day grace period, along with their new balance (current balance + $39 late fee).*/
+select *,
+datediff(day,last_credit_card_payment_date,payment_due_date) as Days_Late,
+datediff(day,last_credit_card_payment_date,payment_due_date) + 5 as Days_Late_Grace_Period,
+credit_card_balance+39 as Balance_w_Late_Fee
+from credit
+where datediff(day,last_credit_card_payment_date,payment_due_date)  < 0
+
+/*For all customers who had their loans rejected for at least 24 months, we will review their loans again 45 days from today. Their loans will be subject to a 1% increase in interest and a $1,000 approval fee added to the balance. Please return the new interest, along with the new balance and their new loan review date.*/
+select *,
+datediff(month,approval_rejection_date,getdate()) as Months_Since_Rejected,
+dateadd(day,45,getdate()) as Reapproval_Review,
+INTEREST_RATE+0.01 as New_Interest_Rate,
+loan_amount + 1000 as New_Loan_Amount
+from lending
+
+
+
+
+
+
