@@ -1,0 +1,505 @@
+/*Advanced Filtering, Group By, and Casting Exercises
+
+Risk Analysis by Branch Markets
+We are analyzing their risk level at branches in the Atlanta, GA market to see if it equates to the 
+same risk level as online signups as there has been a large increase in defaults in this market.
+Can you provide the Director of Internal Risk with applicants that signed up at an actual branch location
+in this market who are subprime, along with their names, city, state, email address, and credit score?
+It’s OK if the applicant doesn’t reside in Atlanta, GA. Their focus is the branch locations.*/
+
+/*WHAT'S NEEDED
+-subprime applicants,
+-signed up in person
+-at branch location Atl, GA
+-applicant first name
+-applicant last name
+-applicant city
+-applicant state
+-applicant email address
+-applicant credit score*/
+
+select applicant_info.cid,
+applicant_info.first_name,
+applicant_info.last_name,
+contact_email.email,
+ip_signups.branch_id,
+subprime.c_score,
+source_location.location
+
+from applicant_info right join ip_signups on applicant_info.cid=ip_signups.cid
+inner join contact_email on contact_email.entry_id=ip_signups.cid
+left join subprime on subprime.applicant_id=applicant_info.cid
+left join source_location on source_location.branch=ip_signups.branch_id
+
+where subprime.c_score is not null and source_location.location like '%Atlanta, Georgia%'
+
+/*Thanks for the list! Actually, she wants to review the risk for additional markets, 
+which will be Austin, TX and Dallas, TX. Please revise and resend as soon as possible.*/
+
+select applicant_info.cid,
+applicant_info.first_name,
+applicant_info.last_name,
+contact_email.email,
+ip_signups.branch_id,
+subprime.c_score,
+source_location.location
+
+from applicant_info right join ip_signups on applicant_info.cid=ip_signups.cid
+inner join contact_email on contact_email.entry_id=ip_signups.cid
+left join subprime on subprime.applicant_id=applicant_info.cid
+left join source_location on source_location.branch=ip_signups.branch_id
+
+where subprime.c_score is not null AND (source_location.location like '%Atlanta, Georgia'% OR
+source_location.location like '%Austin, Texas%' OR source_location.location like '%Dallas, Texas%')
+
+/*She has one more request. She wants to see the number of applicants in each of these markets,
+along with the average credit score in these markets for these applicants.*/
+
+select source_location.location,
+count(ip_signups.cid) AS App_Count,
+Cast(Avg(subprime.c_score) as int) as Avg_C_Score
+
+from applicant_info right join ip_signups on applicant_info.cid=ip_signups.cid
+inner join contact_email on contact_email.entry_id=ip_signups.cid
+left join subprime on subprime.applicant_id=applicant_info.cid
+left join source_location on source_location.branch=ip_signups.branch_id
+
+where subprime.c_score is not null AND (source_location.location like '%Atlanta, Georgia'% OR
+source_location.location like '%Austin, Texas%' OR source_location.location like '%Dallas, Texas%')
+Group by location.location
+
+/*She has one more request. She wants to see which of these markets have an average credit score of at least 600.*/
+
+select source_location.location,
+count(ip_signups.cid) as App_Count,
+CAST( avg(subprime.c_score) as int) as Avg_Credit_Score
+
+from applicant_info right join ip_signups on ip_signups.cid=applicant_info.cid
+inner join contact_email on contact_email.entry_id=ip_signups.cid
+left join subprime on subprime.applicant_id=ip_signups.cid
+left join source_location on source_location.branch=ip_signups.branch_id
+
+where subprime.c_score is not null and 
+(source_location.location LIKE '%Atlanta, Georgia%' OR source_location.location LIKE '%Dallas, Texas%' OR
+source_location.location LIKE '%Austin, Texas%') 
+GROUP BY source_location.location
+HAVING avg (subprime.c_score) >= 600
+
+/*NPO and Google Partnership Promotion
+ We recently completed a partnership with Betty Meyer Light Foundation and Google applicants who signed up online, which has increased applicant signups. Our Marketing department is considering offering a 3.99% loan/refinance promotion for these applicants who have at least a 700 credit score. Please provide a list of these applicants, along with their names, scores, location (including their region), and email address to validate their eligibility. This offer is ineligible in New Mexico and Texas. 
+
+As a heads up, you can find these applicants based on their email address. The Foundation’s applicants have a bmlight.org email and Google applicants have gmail.com email addresses.
+
+What's needed
+-applicants who signed up online
+-google or BMLF applicants
+-3.99% promo to app w >=700 c_score
+-app first name
+-app last name
+-app scores
+-app location/region*
+-app email address,
+-not eligible to NM and TX residents
+-search by bmlight.org or gmail.com email*/
+
+select online_signups.online_signups,
+online_signups.elec_id,
+applicant_info.first_name,
+applicant_info.last_name,
+scores.scores,
+cst_region.location,
+contact_email.email
+from online_signups left join applicant_info on applicant_info.cid=online_signups.elec_id
+join contact_email on contact_email.entry_id=online_signups.elec_id
+left join cst_region on cst_region.cid=applicant_info.cid
+left join scores on scores.credit_id=applicant_info.cid
+left join demographics on demographics.customerid=applicant_info.cid
+
+where demographics.customerid is null and applicant_info.state not in ('NM','TX')
+and scores.scores>=700 and (contact_email.email Like '%gmail.com' OR 
+contact_email.email Like '%bmlight.org') and online_signups.online_signups = 'Y'
+
+/* Another Acceptable Query */
+select applicant_info.cid,
+applicant_info.first_name,
+applicant_info.last_name,
+contact_email.email,
+demographics.customerid,
+online_signups.online_signups,
+scores.scores,
+cst_region.location
+
+from contact_email left join applicant_info on contact_email.entry_id=applicant_info.cid
+left join demographics on demographics.customerid=contact_email.entry_id
+left join online_signups on online_signups.elec_id=applicant_info.cid
+left join scores on scores.credit_id=contact_email.entry_id
+join cst_region on cst_region.cid=applicant_info.cid
+
+where (contact_email.email LIKE '%@gmail.com' OR contact_email.email LIKE '%@bmlight.org') and
+demographics.customerid is null and online_signups.online_signups is not null and
+scores.scores >= 700 and
+(cst_region.location NOT LIKE '%, TX,%' AND cst_region.location NOT LIKE '%, NM,%')
+
+/*I am actually just curious, what are the average bonus payouts when you exclude $0 bonuses for these applicants?*/
+
+select  ROUND ( avg(online_signups.su_bonus) ,2) as Avg_Bonus
+
+from contact_email left join applicant_info on contact_email.entry_id=applicant_info.cid
+left join demographics on demographics.customerid=contact_email.entry_id
+left join online_signups on online_signups.elec_id=applicant_info.cid
+left join scores on scores.credit_id=contact_email.entry_id
+join cst_region on cst_region.cid=applicant_info.cid
+
+where (contact_email.email LIKE '%@gmail.com' OR contact_email.email LIKE '%@bmlight.org') and
+demographics.customerid is null and online_signups.online_signups is not null and
+scores.scores >= 700 and
+(cst_region.location NOT LIKE '%, TX,%' AND cst_region.location NOT LIKE '%, NM,%')
+
+
+/* Finance just expressed concern over the bonus eligibility of these applicants. Can you provide how much in 
+potential bonus payouts we would need to disburse for these applicants. Can you provide two sets of data:
+How much will we have to potentially pay out for these applicants at each bonus amount? For example:
+$0 | 40 applicants | $0 total payout
+$100 | 12 applicants | $1,200 total payout
+$150 | 8 applicants | $1,200 total payout*/
+	
+select online_signups.su_bonus,
+count(contact_email.email) as Bonus_Count,
+sum(online_signups.su_bonus) as Total_Bonus
+from demographics RIGHT JOIN online_signups on demographics.customerid=online_signups.elec_id
+JOIN applicant_info on applicant_info.cid=online_signups.elec_id
+LEFT JOIN contact_email on contact_email.entry_id=online_signups.elec_id
+JOIN cst_region on cst_region.cid=online_signups.elec_id
+JOIN scores on scores.credit_id=online_signups.elec_id
+where demographics.contact_number is null and 
+( (contact_email.email LIKE '%bmlight.org%' OR contact_email.email LIKE '%gmail.com%') AND 
+(cst_region.location NOT LIKE '%TX%' AND cst_region.location NOT LIKE '%NM%') ) AND scores.scores >= 700
+GROUP BY online_signups.su_bonus
+
+/*Can you show this bonus payout by state? Be sure to sort the data by state first (A to Z), then by the bonus amount from highest to lowest.*/
+select applicant_info.state,
+online_signups.su_bonus,
+count(contact_email.email) as Bonus_Count,
+sum(online_signups.su_bonus) as Total_Bonus
+from demographics RIGHT JOIN online_signups on demographics.customerid=online_signups.elec_id
+JOIN applicant_info on applicant_info.cid=online_signups.elec_id
+LEFT JOIN contact_email on contact_email.entry_id=online_signups.elec_id
+JOIN cst_region on cst_region.cid=online_signups.elec_id
+JOIN scores on scores.credit_id=online_signups.elec_id
+where demographics.contact_number is null and 
+( (contact_email.email LIKE '%bmlight.org%' OR contact_email.email LIKE '%gmail.com%') AND
+(cst_region.location NOT LIKE '%TX%' AND cst_region.location NOT LIKE '%NM%') ) AND scores.scores >= 700
+GROUP BY applicant_info.state, online_signups.su_bonus
+order by state, 2 desc
+
+/*Actually, Finance just informed us that only the bonus payouts that total at least $1,000 by bonus level by state would require a signoff approval by Finance. 
+Can you provide Finance with the list of states and bonus levels that will require Finance sign off?*/
+select applicant_info.state,
+online_signups.su_bonus,
+count(contact_email.email) as Bonus_Count,
+sum(online_signups.su_bonus) as Total_Bonus
+from demographics RIGHT JOIN online_signups on demographics.customerid=online_signups.elec_id
+JOIN applicant_info on applicant_info.cid=online_signups.elec_id
+LEFT JOIN contact_email on contact_email.entry_id=online_signups.elec_id
+JOIN cst_region on cst_region.cid=online_signups.elec_id
+JOIN scores on scores.credit_id=online_signups.elec_id
+where demographics.contact_number is null and 
+( (contact_email.email LIKE '%bmlight.org%' OR contact_email.email LIKE '%gmail.com%') AND
+(cst_region.location NOT LIKE '%TX%' AND cst_region.location NOT LIKE '%NM%') ) AND scores.scores >= 700
+GROUP BY applicant_info.state, online_signups.su_bonus
+HAVING sum(online_signups.su_bonus) > 1000
+order by state, 2 desc
+
+
+
+/*Union Exercises*/
+
+
+
+Assessing Market Risk
+Our Risk team will be analyzing risk levels for subprime applicants and customers. They want you to pull a list of the following customers and applicant groups for them to review:
+Subprime customers who meet the following criteria:
+Located in the Midwest or Southwest region but not located in Nevada or Arizona
+For those located in the Midwest region, they didn’t sign up at a branch OR
+For those located in the Southwest region, they did sign up at a branch
+
+select demographics.customerid,
+   demographics.first_name,
+   demographics.last_name,
+   demographics.state,
+   scores.scores,
+   cst_region.location,
+   ip_signups.branch_id
+   from demographics left join scores on scores.credit_id=demographics.customerid
+   join cst_region on cst_region.cid=demographics.customerid
+   left join ip_signups on ip_signups.cid=demographics.customerid
+   where scores.scores between 380 and 719 and
+  
+ ( ( (cst_region.location LIKE '%, Midwest' OR cst_region.location LIKE '%, Southwest') AND 
+ 
+    demographics.state not in ('NV','AZ') ) OR
+
+   (ip_signups.branch_id is null AND cst_region.location LIKE '%, Midwest') OR
+
+   (ip_signups.branch_id is not null AND cst_region.location LIKE '%, Southwest')  )
+
+
+Subprime Applicants located in the Southwest region in Texas or Oklahoma who did not sign up online.
+
+select subprime.*,
+applicant_info.first_name,
+applicant_info.last_name,
+applicant_info.state,
+cst_region.location,
+online_signups.online_signups
+from subprime left join applicant_info on applicant_info.cid=subprime.applicant_id
+join cst_region on cst_region.cid=subprime.applicant_id
+left join online_signups on online_signups.elec_id=applicant_info.cid
+where ( cst_region.location LIKE '%, Southwest' AND applicant_info.state in ('TX','OK') ) AND
+online_signups.online_signups is null
+
+	
+Subprime applicants in NV and AZ.
+select subprime.*,
+applicant_info.first_name,
+applicant_info.last_name,
+applicant_info.state,
+cst_region.location,
+online_signups.online_signups
+from subprime left join applicant_info on applicant_info.cid=subprime.applicant_id
+join cst_region on cst_region.cid=subprime.applicant_id
+left join online_signups on online_signups.elec_id=applicant_info.cid
+where applicant_info.state in ('NV','AZ')
+
+
+/* They actually need all listed groups to be consolidated:
+
+ Subprime customers who meet the following criteria:
+-Located in the Midwest or Southwest region but not located in Nevada or Arizona
+ -For those located in the Midwest region, they didn’t sign up at a branch OR
+ -For those located in the Southwest region, they did sign up at a branch*/
+
+select scores.*,
+demographics.first_name,
+demographics.last_name,
+cst_region.location,
+ip_signups.branch_id,
+online_signups.online_signups,
+'Criteria 1' as Criteria_Group
+
+from scores join cst_region on cst_region.cid=scores.credit_id
+join demographics on demographics.customerid=scores.credit_id
+left join ip_signups on ip_signups.cid=scores.credit_id
+left join online_signups on online_signups.elec_id=scores.credit_id
+
+where scores.scores < 720 and (cst_region.location LIKE '%, Midwest' OR cst_region.location LIKE '%, Southwest') and
+(cst_region.location NOT LIKE '%, AZ,%' AND cst_region.location NOT LIKE '%, NV,%') and
+(cst_region.location LIKE '%, Midwest' AND ip_signups.branch_id is null) OR
+(cst_region.location LIKE '%, Southwest' AND ip_signups.branch_id is not null)
+
+UNION 
+
+
+
+/* Subprime applicants located in the Southwest region in Texas or Oklahoma who did not sign up online.
+
+What's Needed:
+- Subprime applicants (Subprime) X
+- Located in the Southwest region (CST_Region) X
+- Texas or Oklahoma (CST_Region) X
+- Didn't sign up online (Online_Signups)*/
+
+select subprime.applicant_id as credit_id,
+subprime.c_score as Scores,
+applicant_info.first_name,
+applicant_info.last_name,
+cst_region.location,
+ip_signups.branch_id,
+online_signups.online_signups ,
+'Criteria 2' as Criteria_Group
+
+from subprime join cst_region on subprime.applicant_id=cst_region.cid
+left join online_signups on online_signups.elec_id=cst_region.cid
+join applicant_info on applicant_info.cid=subprime.applicant_id
+left join ip_signups on ip_signups.cid=subprime.applicant_id
+
+where cst_region.location LIKE '%, Southwest' and (cst_region.location LIKE '%, TX,%' OR cst_region.location LIKE '%, OK,%') and online_signups.online_signups is null
+
+UNION
+
+/*1.3) Subprime applicants in NV and AZ.
+
+What's Needed:
+- Subprime applicants (Subprime)
+- Located in NV and AZ (Applicant_Info)*/
+
+select subprime.applicant_id as Credit_ID,
+subprime.c_score as Scores,
+applicant_info.first_name,
+applicant_info.last_name,
+applicant_info.state as Location,
+ip_signups.branch_id,
+online_signups.online_signups,
+'Criteria 3' as Criteria_Group
+
+from subprime join applicant_info on applicant_info.cid=subprime.applicant_id
+left join online_signups on online_signups.elec_id=subprime.applicant_id
+left join ip_signups on ip_signups.cid=subprime.applicant_id
+
+where applicant_info.state in ('NV','AZ')
+
+3.) Actually, may you provide the average, highest and lowest credit score for each of these customer/applicant groups?
+/* Actually, may you provide the average, highest and lowest credit score for each of these customer/applicant groups?
+
+What's Needed:
+- Average credit score
+- Highest credit score
+- Lowest credit score 
+- For each criteria group*/
+
+/*Query 1.1) Subprime customers who meet the following criteria:
+-Located in the Midwest or Southwest region but not located in Nevada or Arizona
+ -For those located in the Midwest region, they didn’t sign up at a branch OR
+ -For those located in the Southwest region, they did sign up at a branch*/
+
+select 'Criteria 1' as Criteria_Group,
+avg(scores.scores) as Average_Score,
+max(scores.scores) as Highest_Score,
+min(scores.scores) as Lowest_Score
+
+from scores join cst_region on cst_region.cid=scores.credit_id
+join demographics on demographics.customerid=scores.credit_id
+left join ip_signups on ip_signups.cid=scores.credit_id
+left join online_signups on online_signups.elec_id=scores.credit_id
+
+where scores.scores < 720 and (cst_region.location LIKE '%, Midwest' OR cst_region.location LIKE '%, Southwest') and
+(cst_region.location NOT LIKE '%, AZ,%' AND cst_region.location NOT LIKE '%, NV,%') and
+(cst_region.location LIKE '%, Midwest' AND ip_signups.branch_id is null) OR
+(cst_region.location LIKE '%, Southwest' AND ip_signups.branch_id is not null)
+
+group by 'Criteria 1'
+
+UNION
+
+/* Subprime applicants located in the Southwest region in Texas or Oklahoma who did not sign up online.
+
+What's Needed:
+- Subprime applicants (Subprime) X
+- Located in the Southwest region (CST_Region) X
+- Texas or Oklahoma (CST_Region) X
+- Didn't sign up online (Online_Signups)*/
+
+select 'Criteria 2' as Criteria_Group,
+avg(subprime.c_score) as Average_Score,
+max(subprime.c_score) as Highest_Score,
+min(subprime.c_score) as Lowest_Score
+
+from subprime join cst_region on subprime.applicant_id=cst_region.cid
+left join online_signups on online_signups.elec_id=cst_region.cid
+join applicant_info on applicant_info.cid=subprime.applicant_id
+left join ip_signups on ip_signups.cid=subprime.applicant_id
+
+where cst_region.location LIKE '%, Southwest' and (cst_region.location LIKE '%, TX,%' OR cst_region.location LIKE '%, OK,%') and online_signups.online_signups is null
+
+group by 'Criteria 2'
+
+
+UNION
+
+/* Subprime applicants in NV and AZ.
+
+What's Needed:
+- Subprime applicants (Subprime)
+- Located in NV and AZ (Applicant_Info)*/
+
+select 'Criteria 3' as Criteria_Group,
+avg(subprime.c_score) as Average_Score,
+max(subprime.c_score) as Highest_Score,
+min(subprime.c_score) as Lowest_Score
+
+from subprime join applicant_info on applicant_info.cid=subprime.applicant_id
+left join online_signups on online_signups.elec_id=subprime.applicant_id
+left join ip_signups on ip_signups.cid=subprime.applicant_id
+
+where applicant_info.state in ('NV','AZ')
+
+group by 'Criteria 3'
+
+
+
+/*Our Risk team will also be analyzing risk levels for prime applicants and customers based on their email signups and employer. 
+They want you to pull a consolidated list of the following customers and applicant groups for them to review:
+Gmail or Yahoo account applicants with at least a 750 credit score who signed up for their account online.
+BMLight employees with at least a 725 credit score located in the Southwest or South regions, except those located in TX and OK. 
+Customers who have at least a 775 credit score*/
+select prime.*,
+contact_email.email,
+online_signups.online_signups
+
+from prime left join contact_email on prime.applicant_id=contact_email.entry_id
+join online_signups on online_signups.elec_id=prime.applicant_id
+
+where prime.c_score >= 750 and (contact_email.email LIKE '%@gmail.com%' OR contact_email.email LIKE '%@yahoo.com%')
+
+UNION
+
+select scores.credit_id as Applicant_ID,
+scores.scores as C_Score,
+contact_email.email,
+online_signups.online_signups
+
+from contact_email left join scores on contact_email.entry_id=scores.credit_id
+join cst_region on cst_region.cid=scores.credit_id
+left join online_signups on online_signups.elec_id=scores.credit_id
+
+where scores.scores >= 725 and contact_email.email LIKE '%@bmlight.org%' and 
+(cst_region.location LIKE '%, Southwest' OR cst_region.location LIKE '%, South') and
+(cst_region.location NOT LIKE '%, TX,%' AND cst_region.location NOT LIKE '%, OK,%')
+
+UNION
+
+select demographics.customerid as Applicant_ID,
+scores.scores as C_Score,
+demographics.email,
+online_signups.online_signups
+
+from demographics join scores on scores.credit_id=demographics.customerid
+left join online_signups on online_signups.elec_id=scores.credit_id
+
+where scores.scores >= 775
+/* - From the provided prime applicant and customer list from the previous data request, do you mind providing the number of customers for each criteria group?
+
+ -Jake, the Risk VP, would like a list of the credit scores for all prime and subprime applicants.*/
+
+OPTION 1:
+select *
+from prime
+
+union
+
+select *
+from subprime
+
+OPTION 2:
+select *,
+'Prime' as Credit_Group
+from prime
+
+union
+
+select *,
+'Subprime' as Credit_Group
+from subprime
+
+
+/*Can you send Marketing a list of all customers and applicants along with their sign up type?*/
+select elec_id,
+online_signups
+from online_signups
+
+UNION
+
+select cid as Elec_id,
+'N' as Online_Signups
+from ip_signups
+
