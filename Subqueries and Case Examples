@@ -1,0 +1,307 @@
+/*SUBQUERIES QUERY EXAMPLES*/
+
+/*Assessing Market Risk
+Our Risk team will be analyzing risk levels for subprime and prime applicants who didn’t sign up online and
+located in the Southwest region (excluding AZ and NM) or the South region (excluding FL). 
+We just need to know their IDs, names, state, and which group they belong to (Subprime or Applicant).*/
+
+select subprime.applicant_id,
+applicant_info.first_name,
+applicant_info.last_name,
+applicant_info.state,
+cst_region.location,
+online_signups.online_signups,
+'Subprime' as Applicant_Group
+from subprime left join applicant_info on applicant_info.cid=subprime.applicant_id
+join cst_region on cst_region.cid=subprime.applicant_id
+left join online_signups on online_signups.elec_id=subprime.applicant_id
+
+where online_signups.online_signups is null and applicant_info.state not in ('AZ','FL','NM') and
+cst_region.location LIKE '%, South%'
+
+UNION
+
+select prime.applicant_id,
+applicant_info.first_name,
+applicant_info.last_name,
+applicant_info.state,
+cst_region.location,
+online_signups.online_signups,
+'Prime' as Applicant_Group
+from prime left join applicant_info on applicant_info.cid=prime.applicant_id
+join cst_region on cst_region.cid=prime.applicant_id
+left join online_signups on online_signups.elec_id=prime.applicant_id
+
+where online_signups.online_signups is null and applicant_info.state not in ('AZ','FL','NM') and
+cst_region.location LIKE '%, South%'
+
+/*Actually, upon reviewing this, there is some information I forgot to mention. May you exclude BMLight employees and any applicants that mistakenly are marked as default? 
+They shouldn’t be default since they are only applicants, but remember, we had the IT issue a few weeks ago with default applicants.*/
+
+SELECT Dummy.*,
+Contact_Email.Email,
+default_status.default
+FROM
+        (select subprime.applicant_id,
+        applicant_info.first_name,
+        applicant_info.last_name,
+        applicant_info.state,
+        cst_region.location,
+        online_signups.online_signups,
+        'Subprime' as Applicant_Group
+        from subprime left join applicant_info on applicant_info.cid=subprime.applicant_id
+        join cst_region on cst_region.cid=subprime.applicant_id
+        left join online_signups on online_signups.elec_id=subprime.applicant_id
+        
+        where online_signups.online_signups is null and applicant_info.state not in ('AZ','FL','NM') and
+        cst_region.location LIKE '%, South%'
+        
+        UNION
+        
+        select prime.applicant_id,
+        applicant_info.first_name,
+        applicant_info.last_name,
+        applicant_info.state,
+        cst_region.location,
+        online_signups.online_signups,
+        'Prime' as Applicant_Group
+        from prime left join applicant_info on applicant_info.cid=prime.applicant_id
+        join cst_region on cst_region.cid=prime.applicant_id
+        left join online_signups on online_signups.elec_id=prime.applicant_id
+        
+        where online_signups.online_signups is null and applicant_info.state not in ('AZ','FL','NM') and
+        cst_region.location LIKE '%, South%')Dummy LEFT JOIN contact_email on contact_email.entry_id=Dummy.Applicant_ID
+        LEFT JOIN default_status on default_status.id=dummy.applicant_id
+
+WHERE contact_email.email NOT LIKE '%@bmlight.org' and default_status.default is null
+
+
+/*Thanks! Please provide a breakout of the number of subprime vs prime applicants by state.*/
+
+SELECT State,
+Applicant_Group,
+count(Applicant_ID) as Applicant_Count
+FROM
+        (SELECT Dummy.*,
+        Contact_Email.Email,
+        default_status.default
+        FROM
+                (select subprime.applicant_id,
+                applicant_info.first_name,
+                applicant_info.last_name,
+                applicant_info.state,
+                cst_region.location,
+                online_signups.online_signups,
+                'Subprime' as Applicant_Group
+                from subprime left join applicant_info on applicant_info.cid=subprime.applicant_id
+                join cst_region on cst_region.cid=subprime.applicant_id
+                left join online_signups on online_signups.elec_id=subprime.applicant_id
+                
+                where online_signups.online_signups is null and applicant_info.state not in ('AZ','FL','NM') and
+                cst_region.location LIKE '%, South%'
+                
+                UNION
+                
+                select prime.applicant_id,
+                applicant_info.first_name,
+                applicant_info.last_name,
+                applicant_info.state,
+                cst_region.location,
+                online_signups.online_signups,
+                'Prime' as Applicant_Group
+                from prime left join applicant_info on applicant_info.cid=prime.applicant_id
+                join cst_region on cst_region.cid=prime.applicant_id
+                left join online_signups on online_signups.elec_id=prime.applicant_id
+                
+                where online_signups.online_signups is null and applicant_info.state not in ('AZ','FL','NM') and
+                cst_region.location LIKE '%, South%')Dummy LEFT JOIN contact_email on contact_email.entry_id=Dummy.Applicant_ID
+                LEFT JOIN default_status on default_status.id=dummy.applicant_id
+        
+        WHERE contact_email.email NOT LIKE '%@bmlight.org' and default_status.default is null)DummyA
+
+GROUP BY State, Applicant_Group
+ORDER BY State asc
+
+
+      /*CASE QUERY EXAMPLES*/
+
+
+May you pull a list of customers and applicants? Be sure to label which are customers vs. which are applicants.
+select applicant_info.*,
+demographics.customerid,
+case when demographics.customerid is null then 'Applicant' else 'Customer' end as Type
+
+from applicant_info left join demographics on demographics.customerid=applicant_info.cid
+
+
+Finance needs a list of subprime and prime applicants and customers. If they have scores below 720 and are customers, return as Subprime Customers. If they have scores below 720 and are applicants, return as Subprime Applicants. If they have scores that are 720 and above and are customers, return as Prime Customers. All others, return as Prime Applicants.
+select scores.*,
+demographics.customerid,
+case when demographics.customerid is null AND scores.scores < 720 then 'Subprime Applicant'
+when demographics.customerid is not null AND scores.scores >= 720 then 'Prime Customer'
+when demographics.customerid is not null AND scores.scores < 720 then 'Subprime Customer'
+else 'Prime Applicant' end as Type
+
+from scores left join demographics on scores.credit_id=demographics.customerid
+
+
+
+/*Our Compliance team has informed us that we will be updating fiscal year date ranges. With the change, please return the following:
+Quarter 1: March 1st – May 31st
+Quarter 2: June 1st – August 31st
+Quarter 3: September 1st – November 30th
+Quarter 4: December 1st – February 28th/29th
+May you provide a list of all customers who opened their account along with  the quarter they opened their accounts?*/
+	/*Option 1 (Month Number):*/
+	
+select contact_number,
+date_of_account_opening,
+month(date_of_account_opening) as Opening_Month,
+case when month(date_of_account_opening) between 3 and 5 then 'Q1'
+ when month(date_of_account_opening) between 6 and 8 then 'Q2'
+ when month(date_of_account_opening) between 9 and 11 then 'Q3'
+ else 'Q4' end as New_Quarters
+from account
+
+	/*Option 2 (Month Name):*/
+select contact_number,
+date_of_account_opening,
+monthname(date_of_account_opening) as Opening_Month,
+case when monthname(date_of_account_opening) in ('Mar','Apr','May') then 
+'Q1'
+    when monthname(date_of_account_opening) in ('Jun','Jul','Aug') then 'Q2'
+    when monthname(date_of_account_opening) in ('Sep','Oct','Nov') then 'Q3'
+    else 'Q4' end as New_Quarter
+from account
+ 
+	/*Example of CASE STATEMENT filtering for only Q1 and Q3 customers.*/
+	
+select contact_number,
+date_of_account_opening,
+monthname(date_of_account_opening) as Opening_Month,
+case when monthname(date_of_account_opening) in ('Mar','Apr','May') then 'Q1'
+    when monthname(date_of_account_opening) in ('Jun','Jul','Aug') then 'Q2'
+    when monthname(date_of_account_opening) in ('Sep','Oct','Nov') then 'Q3'
+    else 'Q4' end as New_Quarter
+from account
+where case when monthname(date_of_account_opening) in ('Mar','Apr','May') then 'Q1'
+    when monthname(date_of_account_opening) in ('Jun','Jul','Aug') then 'Q2'
+    when monthname(date_of_account_opening) in ('Sep','Oct','Nov') then 'Q3'
+    else 'Q4' end in ('Q1','Q3')
+
+/*Thanks for providing! Do you mind showing a breakout of how many people opened their accounts by quarter?
+Be sure to sort this by quarter. Thanks in advance.*/
+
+/*Option 1 (Case Statement in ORDER BY):*/
+
+select case when monthname(date_of_account_opening) in ('Mar','Apr','May') then 'Q1'
+    when monthname(date_of_account_opening) in ('Jun','Jul','Aug') then 'Q2'
+    when monthname(date_of_account_opening) in ('Sep','Oct','Nov') then 'Q3'
+    else 'Q4' end as New_Quarter,
+count(contact_number) as Account_Count
+from account
+group by case when monthname(date_of_account_opening) in ('Mar','Apr','May') then 'Q1'
+    when monthname(date_of_account_opening) in ('Jun','Jul','Aug') then 'Q2'
+    when monthname(date_of_account_opening) in ('Sep','Oct','Nov') then 'Q3'
+    else 'Q4' end 
+ORDER BY case when monthname(date_of_account_opening) in ('Mar','Apr','May') then 'Q1'
+    when monthname(date_of_account_opening) in ('Jun','Jul','Aug') then 'Q2'
+    when monthname(date_of_account_opening) in ('Sep','Oct','Nov') then 'Q3'
+    else 'Q4' end asc
+
+/*Option 2 (Column Number  in ORDER BY):*/
+
+select case when monthname(date_of_account_opening) in ('Mar','Apr','May') then 'Q1'
+    when monthname(date_of_account_opening) in ('Jun','Jul','Aug') then 'Q2'
+    when monthname(date_of_account_opening) in ('Sep','Oct','Nov') then 'Q3'
+    else 'Q4' end as New_Quarter,
+count(contact_number) as Account_Count
+from account
+group by case when monthname(date_of_account_opening) in ('Mar','Apr','May') then 'Q1'
+    when monthname(date_of_account_opening) in ('Jun','Jul','Aug') then 'Q2'
+    when monthname(date_of_account_opening) in ('Sep','Oct','Nov') then 'Q3'
+    else 'Q4' end 
+ORDER BY 1 asc
+
+
+/*Finance needs a list of subprime and prime applicants. For those with a 350 to 649 credit score, return as Subprime High Risk
+For those with a 650 to 699 credit score, return as Subprime Medium Risk.
+For those with a 700 to 719 score, return as Subprime Low Risk. 
+For those with a 720 to 750 credit score, return as Prime High Risk. 
+For those with a 751 to 774 credit score, return as Prime Medium Risk. All others, return as Prime No Risk.*/
+
+SELECT *,
+case when c_score between 350 and 649 then 'Subprime High Risk'
+    when c_score between 650 and 699 then 'Subprime Medium Risk'
+    when c_score between 700 and 719 then 'Subprime Low Risk'
+    when c_score between 720 and 750 then 'Prime High Risk'
+    when c_score between 751 and 774 then 'Prime Medium Risk'
+    else 'Prime No Risk' end as Risk_Level
+FROM
+    (select *
+    from subprime
+    
+    UNION
+    
+    select *
+    from prime)TableA
+
+
+/*Do you mind providing the average credit score for each risk range, along with the number of applicants in each risk range?*/
+SELECT 
+case when c_score between 380 and 649 then 'Subprime High Risk'
+    when c_score between 650 and 699 then 'Subprime Medium Risk'
+    when c_score between 700 and 719 then 'Subprime Low Risk'
+    when c_score between 720 and 750 then 'Prime High Risk'
+    when c_score between 751 and 774 then 'Prime Medium Risk'
+    else 'Prime No Risk' end as Risk_Level,
+count(Applicant_ID) as Applicant_Count,
+round(avg(C_Score),0) as Average_Score
+
+FROM
+    (SELECT *
+    FROM subprime
+    
+    UNION
+    
+    SELECT *
+    FROM prime)TableA
+GROUP BY case when c_score between 380 and 649 then 'Subprime High Risk'
+    when c_score between 650 and 699 then 'Subprime Medium Risk'
+    when c_score between 700 and 719 then 'Subprime Low Risk'
+    when c_score between 720 and 750 then 'Prime High Risk'
+    when c_score between 751 and 774 then 'Prime Medium Risk'
+    else 'Prime No Risk' end
+
+
+/*What is the total number of applicants in the Prime No Risk and Prime Medium Risk groups? */
+
+SELECT sum(Applicant_Count) as Prime_Med_No_Risk_Count
+FROM
+    (SELECT 
+    case when c_score between 380 and 649 then 'Subprime High Risk'
+        when c_score between 650 and 699 then 'Subprime Medium Risk'
+        when c_score between 700 and 719 then 'Subprime Low Risk'
+        when c_score between 720 and 750 then 'Prime High Risk'
+        when c_score between 751 and 774 then 'Prime Medium Risk'
+        else 'Prime No Risk' end as Risk_Level,
+    count(Applicant_ID) as Applicant_Count,
+    round(avg(C_Score),0) as Average_Score
+    
+    FROM
+        (SELECT *
+        FROM subprime
+        
+        UNION
+        
+        SELECT *
+        FROM prime)TableA
+    GROUP BY case when c_score between 380 and 649 then 'Subprime High Risk'
+        when c_score between 650 and 699 then 'Subprime Medium Risk'
+        when c_score between 700 and 719 then 'Subprime Low Risk'
+        when c_score between 720 and 750 then 'Prime High Risk'
+        when c_score between 751 and 774 then 'Prime Medium Risk'
+        else 'Prime No Risk' end)TableB
+
+WHERE Risk_Level in ('Prime Medium Risk','Prime No Risk')
+
